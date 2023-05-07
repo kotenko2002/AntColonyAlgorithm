@@ -13,7 +13,7 @@ namespace AntColonyAlgorithm
             Constants constants = new Constants()
             {
                 Alpha = 1,
-                Beta = 1,
+                Beta = 2,
                 M = 10,
                 StartPheramonValue = 0.2,
                 Q = 4,
@@ -21,7 +21,16 @@ namespace AntColonyAlgorithm
             };
 
             SyncAntColony syncAntColony = new SyncAntColony(constants, distanseMap);
-            syncAntColony.Iteration();
+
+            for (int i = 0; i < 100; i++)
+            {
+                syncAntColony.Iteration();
+                Console.WriteLine(syncAntColony.BestPathLenght);
+            }
+            foreach (var item in syncAntColony.BestPath)
+            {
+                Console.Write($"{item} -> ");
+            }
         }
     }
 }

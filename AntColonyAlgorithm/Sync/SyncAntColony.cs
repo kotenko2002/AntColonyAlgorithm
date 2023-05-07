@@ -9,6 +9,9 @@ namespace AntColonyAlgorithm.Sync
         public double[,] PheromonesMap { get; set; }
         public int[] Cities { get; set; }
 
+        public double BestPathLenght { get; set; } = double.MaxValue;
+        public List<int> BestPath { get; set; }
+
         public SyncAntColony(Constants constants, double[,] distanceMap)
         {
             if (distanceMap.GetLength(0) != distanceMap.GetLength(1))
@@ -46,7 +49,14 @@ namespace AntColonyAlgorithm.Sync
                 cityIndex++;
             }
 
+            var bestAnt = ants.MinBy(ant => ant.Result);
+            if (bestAnt.Result < BestPathLenght)
+            {
+                BestPathLenght = bestAnt.Result;
+                BestPath = bestAnt.Sequence;
+            }
 
+            UpdatePheromone(ants);
         }
 
         private void GoThroughAllCities(Ant ant, int fromCityIndex)
@@ -66,7 +76,6 @@ namespace AntColonyAlgorithm.Sync
 
             GoThroughAllCities(ant, toCityIndex);
         }
-
         private (int city, double probability)[] GetTransitionProbabilities(Ant ant, int fromCityIndex)
         {
             (int city, double probability)[] transitionProbabilities = Cities
@@ -92,7 +101,6 @@ namespace AntColonyAlgorithm.Sync
 
             return transitionProbabilities;
         }
-
         private int SelectNextCityToGo((int vertexIndex, double probability)[] sequence, double randomValue)
         {
             double sum = 0;
@@ -106,6 +114,19 @@ namespace AntColonyAlgorithm.Sync
             }
 
             throw new ArgumentException("Data passed as a parameter to the method is not valid");
+        }
+        private void UpdatePheromone(Ant[] ants)
+        {
+            // випарюєм
+            for (int i = 0; i < PheromonesMap.GetLength(0); i++)
+                for (int j = 0; j < PheromonesMap.GetLength(1); j++)
+                    if (i != j)
+                        PheromonesMap[i, j] = Constants.P * PheromonesMap[i, j];
+
+            //досипаємо
+            foreach (var ant in ants)
+                for (int i = 0; i < ant.Sequence.Count - 1; i++)
+                    PheromonesMap[ant.Sequence[i], ant.Sequence[i + 1]] += Constants.Q / ant.Result;
         }
     }
 }

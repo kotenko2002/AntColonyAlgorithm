@@ -9,7 +9,7 @@ namespace AntColonyAlgorithm
     {
         static public void Main(string[] args)
         {
-            var distanseMap = JsonConvert.DeserializeObject<double[,]>(File.ReadAllText($"100cities.txt"));
+            var distanseMap = JsonConvert.DeserializeObject<double[,]>(File.ReadAllText($"200cities.txt"));
             Constants constants = new Constants()
             {
                 Alpha = 1,
@@ -34,10 +34,12 @@ namespace AntColonyAlgorithm
             for (int i = 0; i < 100; i++)
                 syncAntColony.Iteration();
 
-            //foreach (var item in syncAntColony.BestPath)
+            Console.WriteLine($"синхронний: {syncAntColony.Best.Result}");
+            //foreach (var item in syncAntColony.Best.Sequence)
             //{
             //    Console.Write($"{item} -> ");
             //}
+            //Console.WriteLine();
         }
 
         public static void ParallelSyncAlg(Constants constants, double[,] distanseMap)
@@ -47,12 +49,12 @@ namespace AntColonyAlgorithm
             for (int i = 0; i < 100; i++)
                 syncAntColony.Iteration();
 
-            Console.WriteLine(syncAntColony.BestPathLenght);
-
-            //foreach (var item in syncAntColony.BestPath)
+            Console.WriteLine($"паралельний: {syncAntColony.Best.Result}");
+            //foreach (var item in syncAntColony.Best.Sequence)
             //{
             //    Console.Write($"{item} -> ");
             //}
+            //Console.WriteLine();
         }
 
         public static Stopwatch MeasureTime(Action method)

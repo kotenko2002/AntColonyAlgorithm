@@ -8,9 +8,7 @@ namespace AntColonyAlgorithm.Algorithm
         public double[,] DistanceMap { get; set; }
         public double[,] PheromonesMap { get; set; }
         public int[] Cities { get; set; }
-
-        public double BestPathLenght { get; set; } = double.MaxValue;
-        public List<int> BestPath { get; set; }
+        public Ant Best { get; set; }
 
         public ParallelAntColony(Constants constants, double[,] distanceMap)
         {
@@ -30,7 +28,7 @@ namespace AntColonyAlgorithm.Algorithm
                     if (i != j)
                         PheromonesMap[i, j] = Constants.StartPheramonValue;
 
-            Console.WriteLine();
+            Best = new Ant(double.MaxValue, null);
         }
 
         public void Iteration()
@@ -47,11 +45,8 @@ namespace AntColonyAlgorithm.Algorithm
             });
 
             var bestAnt = ants.MinBy(ant => ant.Result);
-            if (bestAnt.Result < BestPathLenght)
-            {
-                BestPathLenght = bestAnt.Result;
-                BestPath = bestAnt.Sequence;
-            }
+            if (bestAnt.Result < Best.Result)
+                Best = bestAnt;
 
             UpdatePheromone(ants);
         }

@@ -1,8 +1,8 @@
 ﻿using AntColonyAlgorithm.General;
 
-namespace AntColonyAlgorithm.Sync
+namespace AntColonyAlgorithm.Algorithm
 {
-    public class SyncAntColony
+    public class ParallelAntColony
     {
         public Constants Constants { get; set; }
         public double[,] DistanceMap { get; set; }
@@ -12,7 +12,7 @@ namespace AntColonyAlgorithm.Sync
         public double BestPathLenght { get; set; } = double.MaxValue;
         public List<int> BestPath { get; set; }
 
-        public SyncAntColony(Constants constants, double[,] distanceMap)
+        public ParallelAntColony(Constants constants, double[,] distanceMap)
         {
             if (distanceMap.GetLength(0) != distanceMap.GetLength(1))
                 throw new ArgumentException("The distance map is not square");
@@ -39,15 +39,12 @@ namespace AntColonyAlgorithm.Sync
                 .Select(_ => new Ant())
                 .ToArray();
 
-            int cityIndex = 0;
-            for (int i = 0; i < ants.Length; i++)
+            Parallel.For(0, ants.Length, i =>
             {
-                if (cityIndex == Cities.Length)
-                    cityIndex = 0;
+                int firstCityIndex = i % Cities.Length;
 
-                GoThroughAllCities(ants[i], cityIndex);
-                cityIndex++;
-            }
+                GoThroughAllCities(ants[i], firstCityIndex);
+            });
 
             var bestAnt = ants.MinBy(ant => ant.Result);
             if (bestAnt.Result < BestPathLenght)
@@ -68,7 +65,7 @@ namespace AntColonyAlgorithm.Sync
 
             ant.Result += DistanceMap[fromCityIndex, toCityIndex];
 
-            if(ant.Sequence.Count == Cities.Length - 1)// перевірка на ласт місто
+            if (ant.Sequence.Count == Cities.Length - 1)// перевірка на ласт місто
             {
                 ant.Sequence.Add(toCityIndex);
                 return;
@@ -95,7 +92,7 @@ namespace AntColonyAlgorithm.Sync
             double sumOfTransitionProbabilities = transitionProbabilities.Sum(item => item.probability);
             for (int i = 0; i < transitionProbabilities.Length; i++)
             {
-                transitionProbabilities[i].probability = 
+                transitionProbabilities[i].probability =
                     transitionProbabilities[i].probability / sumOfTransitionProbabilities;
             }
 

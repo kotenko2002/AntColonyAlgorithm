@@ -26,7 +26,7 @@ namespace AntColonyAlgorithm.Algorithm
             for (int i = 0; i < Cities.Length; i++)
                 for (int j = 0; j < Cities.Length; j++)
                     if (i != j)
-                        PheromonesMap[i, j] = Constants.StartPheramonValue;
+                        PheromonesMap[i, j] = 0.2;
 
             Best = new Ant(double.MaxValue, null);
         }
@@ -40,7 +40,6 @@ namespace AntColonyAlgorithm.Algorithm
             Parallel.For(0, ants.Length, i =>
             {
                 int firstCityIndex = i % Cities.Length;
-
                 GoThroughAllCities(ants[i], firstCityIndex);
             });
 
@@ -53,20 +52,17 @@ namespace AntColonyAlgorithm.Algorithm
 
         private void GoThroughAllCities(Ant ant, int fromCityIndex)
         {
-            ant.Sequence.Add(fromCityIndex);
-
-            var transitionProbabilities = GetTransitionProbabilities(ant, fromCityIndex);
-            int toCityIndex = SelectNextCityToGo(transitionProbabilities, new Random().NextDouble());
-
-            ant.Result += DistanceMap[fromCityIndex, toCityIndex];
-
-            if (ant.Sequence.Count == Cities.Length - 1)// перевірка на ласт місто
+            while (ant.Sequence.Count < Cities.Length - 1)
             {
-                ant.Sequence.Add(toCityIndex);
-                return;
-            }
+                ant.Sequence.Add(fromCityIndex);
 
-            GoThroughAllCities(ant, toCityIndex);
+                var transitionProbabilities = GetTransitionProbabilities(ant, fromCityIndex);
+                int toCityIndex = SelectNextCityToGo(transitionProbabilities, new Random().NextDouble());
+
+                ant.Result += DistanceMap[fromCityIndex, toCityIndex];
+                fromCityIndex = toCityIndex;
+            }
+            ant.Sequence.Add(fromCityIndex);
         }
         private (int city, double probability)[] GetTransitionProbabilities(Ant ant, int fromCityIndex)
         {
@@ -93,7 +89,7 @@ namespace AntColonyAlgorithm.Algorithm
 
             return transitionProbabilities;
         }
-        private int SelectNextCityToGo((int vertexIndex, double probability)[] sequence, double randomValue)
+        private int SelectNextCityToGo((int city, double probability)[] sequence, double randomValue)
         {
             double sum = 0;
 
@@ -102,10 +98,11 @@ namespace AntColonyAlgorithm.Algorithm
                 sum += sequence[i].probability;
 
                 if (randomValue <= sum)
-                    return sequence[i].vertexIndex;
+                    return sequence[i].city;
             }
 
-            throw new ArgumentException("Data passed as a parameter to the method is not valid");
+            return sequence[sequence.Length - 1].city;
+            //throw new ArgumentException("Data passed as a parameter to the method is not valid");
         }
         private void UpdatePheromone(Ant[] ants)
         {

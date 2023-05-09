@@ -2,7 +2,7 @@
 
 namespace AntColonyAlgorithm.Algorithm
 {
-    public class SyncAntColony
+    public class AsyncAntColony
     {
         public Constants Constants { get; set; }
         public double[,] DistanceMap { get; set; }
@@ -10,7 +10,7 @@ namespace AntColonyAlgorithm.Algorithm
         public int CitiesCount { get; set; }
         public Ant Best { get; set; }
 
-        public SyncAntColony(Constants constants, double[,] distanceMap)
+        public AsyncAntColony(Constants constants, double[,] distanceMap)
         {
             if (distanceMap.GetLength(0) != distanceMap.GetLength(1))
                 throw new ArgumentException("The distance map is not square");
@@ -19,8 +19,6 @@ namespace AntColonyAlgorithm.Algorithm
             DistanceMap = distanceMap;
 
             CitiesCount = distanceMap.GetLength(0);
-            //for (int i = 0; i < Cities.Length; i++)
-            //    Cities[i] = i;
 
             PheromonesMap = new double[CitiesCount, CitiesCount];
             for (int i = 0; i < CitiesCount; i++)
@@ -31,18 +29,26 @@ namespace AntColonyAlgorithm.Algorithm
             Best = new Ant(double.MaxValue, null);
         }
 
-        public void Iteration()
+        public async Task IterationAsync()
         {
             Ant[] ants = new Ant[Constants.M];
-            for (int i = 0; i < ants.Length; i++)
+            for (int i = 0; i < ants.Length; i++) 
                 ants[i] = new Ant();
+
+            var tasks = new List<Task>();
 
             for (int i = 0; i < ants.Length; i++)
             {
-                int firstCityIndex = i % CitiesCount;
-                GoThroughAllCities(ants[i], firstCityIndex);
+                int index = i;
+                tasks.Add(Task.Run(() =>
+                {
+                    int firstCityIndex = index % CitiesCount;
+                    GoThroughAllCities(ants[index], firstCityIndex);
+                }));
             }
-            
+
+            await Task.WhenAll(tasks);
+
             var bestAnt = ants.MinBy(ant => ant.Result);
             if (bestAnt.Result < Best.Result)
                 Best = bestAnt;
@@ -77,7 +83,7 @@ namespace AntColonyAlgorithm.Algorithm
                     double probability = Math.Pow(PheromonesMap[fromCityIndex, i], Constants.Alpha)
                         * Math.Pow(1 / DistanceMap[fromCityIndex, i], Constants.Beta);
                     sumOfTransitionProbabilities += probability;
-                    transitionProbabilities[tpIndex] = new (i, probability);
+                    transitionProbabilities[tpIndex] = new(i, probability);
 
                     tpIndex++;
                 }

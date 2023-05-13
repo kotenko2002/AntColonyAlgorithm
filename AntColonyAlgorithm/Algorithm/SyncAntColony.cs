@@ -19,8 +19,6 @@ namespace AntColonyAlgorithm.Algorithm
             DistanceMap = distanceMap;
 
             CitiesCount = distanceMap.GetLength(0);
-            //for (int i = 0; i < Cities.Length; i++)
-            //    Cities[i] = i;
 
             PheromonesMap = new double[CitiesCount, CitiesCount];
             for (int i = 0; i < CitiesCount; i++)
@@ -33,7 +31,7 @@ namespace AntColonyAlgorithm.Algorithm
 
         public void Iteration()
         {
-            Ant[] ants = new Ant[Constants.M];
+            Ant[] ants = new Ant[CitiesCount];
             for (int i = 0; i < ants.Length; i++)
                 ants[i] = new Ant();
 

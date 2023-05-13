@@ -31,12 +31,11 @@ namespace AntColonyAlgorithm.Algorithm
 
         public async Task IterationAsync()
         {
-            Ant[] ants = new Ant[Constants.M];
+            Ant[] ants = new Ant[CitiesCount];
             for (int i = 0; i < ants.Length; i++) 
                 ants[i] = new Ant();
 
             var tasks = new List<Task>();
-
             for (int i = 0; i < ants.Length; i++)
             {
                 int index = i;
@@ -46,7 +45,6 @@ namespace AntColonyAlgorithm.Algorithm
                     GoThroughAllCities(ants[index], firstCityIndex);
                 }));
             }
-
             await Task.WhenAll(tasks);
 
             var bestAnt = ants.MinBy(ant => ant.Result);

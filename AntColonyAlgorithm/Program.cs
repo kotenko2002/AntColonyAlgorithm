@@ -8,149 +8,96 @@ namespace AntColonyAlgorithm
 {
     internal class Program
     {
-        
-
-        static public void Main(string[] args)
+        static public async Task Main(string[] args)
         {
-            ParameterSelectionExperiment(100, 100);
-            //PrintExperimentResult();
+            await СorrectnessExperimen(100, 100);
         }
-        public static void ParameterSelectionExperiment(int countOfCities, int iterations)
+        public static async Task СorrectnessExperimen(int cities, int iterations)
         {
-            int counter = 0;
-            bool observerIsAlive = true;
-
-            var distanseMap = JsonConvert.DeserializeObject<double[,]>(File.ReadAllText($"{countOfCities}cities.txt"));
-
-            List<Constants> stats = new List<Constants>();
-
-            for (int Alpha = 1; Alpha < 5; Alpha++)
-                for (int Beta = 1; Beta < 5; Beta++)
-                    for (double P = 0.1; P < 1; P += 0.1)
-                        for (int Q = 1; Q < 5; Q++)
-                        {
-                            stats.Add(new Constants()
-                            {
-                                Alpha = Alpha,
-                                Beta = Beta,
-                                M = countOfCities,
-                                Q = Q,
-                                P = P
-                            });
-                            stats.Add(new Constants()
-                            {
-                                Alpha = Alpha,
-                                Beta = Beta,
-                                M = countOfCities / 2,
-                                Q = Q,
-                                P = P
-                            });
-                        }
-
-            new Thread(() =>
+            var distanseMap = JsonConvert.DeserializeObject<double[,]>(
+                File.ReadAllText($"{cities}cities.txt"));
+            Constants constansts = new Constants()
             {
-                while (observerIsAlive)
-                {
-                    Console.WriteLine($"{counter}/{stats.Count}");
-                    Thread.Sleep(10000);
-                    Console.Clear();
-                }
-                Console.WriteLine($"{counter}/{stats.Count}");
-            }).Start();
+                Alpha = 1,
+                Beta = 1,
+                Q = 4,
+                P = 0.8,
+            };
 
-            ConcurrentBag<TestResult> tests = new ConcurrentBag<TestResult>();
-            Parallel.ForEach(stats, stat =>
-            {
-                ParallelAntColony parallelAntColony = new ParallelAntColony(stat, distanseMap);
+            var asyncStopwatch = new Stopwatch();
+            asyncStopwatch.Start();
+            AsyncAntColony asyncAntColony = new AsyncAntColony(constansts, distanseMap);
+            for (int j = 0; j < iterations; j++)
+                await asyncAntColony.IterationAsync();
+            asyncStopwatch.Stop();
 
-                for (int i = 0; i < iterations; i++)
-                    parallelAntColony.Iteration();
+            var syncStopwatch = new Stopwatch();
+            syncStopwatch.Start();
+            SyncAntColony syncAntColony = new SyncAntColony(constansts, distanseMap);
+            for (int j = 0; j < iterations; j++)
+                syncAntColony.Iteration();
+            syncStopwatch.Stop();
 
-                tests.Add(new TestResult()
-                {
-                    Alpha = stat.Alpha,
-                    Beta = stat.Beta,
-                    M = stat.M,
-                    Q = stat.Q,
-                    P = Math.Round(stat.P, 1),
-                    Result = parallelAntColony.Best.Result
-                });
-                Interlocked.Increment(ref counter);
-            });
-            observerIsAlive = false;
-
-            string text = JsonConvert.SerializeObject(tests.ToArray());
-            File.WriteAllText("testResults.txt", text);
+            Console.WriteLine($"sync | time: {syncStopwatch.ElapsedMilliseconds}," +
+                $" bestWay:{syncAntColony.Best.Result}");
+            Console.WriteLine($"async| time: {asyncStopwatch.ElapsedMilliseconds}," +
+                $" bestWay:{asyncAntColony.Best.Result}");
         }
-        public static void PrintExperimentResult()
+        public static void SyncExperiment(int cities, int outerIterations)
         {
-            var list = JsonConvert.DeserializeObject<TestResult[]>(File.ReadAllText("testResults2.txt"));
-
-            var printList = list.OrderByDescending(i => i.Result)
-                .ThenByDescending(i => i.Alpha)
-                .ThenByDescending(i => i.M)
-                .ThenByDescending(i => i.Q)
-                .ThenByDescending(i => i.P);
-
-            foreach (var item in printList)
+            int innerIterations = 100;
+            long totalTime = 0;
+            var distanseMap = JsonConvert.DeserializeObject<double[,]>(
+                File.ReadAllText($"{cities}cities.txt"));
+            Constants constansts = new Constants()
             {
-                Console.WriteLine($"When A: {item.Alpha}, B: {item.Beta}, M:{item.M}, Q: {item.Q}, P: {Math.Round(item.P, 1)} " +
-                    $"Result: {item.Result}");
+                Alpha = 1,
+                Beta = 1,
+                Q = 4,
+                P = 0.8,
+            };
+
+            for (int i = 0; i < outerIterations; i++)
+            {
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
+
+                SyncAntColony syncAntColony = new SyncAntColony(constansts, distanseMap);
+                for (int j = 0; j < innerIterations; j++)
+                    syncAntColony.Iteration();
+
+                stopwatch.Stop();
+                totalTime += stopwatch.ElapsedMilliseconds;
             }
+            Console.WriteLine(totalTime/outerIterations);
         }
-        public static void TestSyncAlg(Constants constants, double[,] distanseMap)
+        public static async Task AsyncExperiment(int cities, int outerIterations)
         {
-            SyncAntColony syncAntColony = new SyncAntColony(constants, distanseMap);
+            int innerIterations = 100;
+            long totalTime = 0;
+            var distanseMap = JsonConvert.DeserializeObject<double[,]>(
+                File.ReadAllText($"{cities}cities.txt"));
+            Constants constansts = new Constants()
+            {
+                Alpha = 1,
+                Beta = 1,
+                Q = 4,
+                P = 0.8,
+            };
 
-            for (int i = 0; i < 100; i++)
-                syncAntColony.Iteration();
+            for (int i = 0; i < outerIterations; i++)
+            {
+                var stopwatch = new Stopwatch();
+                stopwatch.Start();
 
-            //Console.WriteLine($"синхронний: {syncAntColony.Best.Result}");
-            //foreach (var item in syncAntColony.Best.Sequence)
-            //{
-            //    Console.Write($"{item} -> ");
-            //}
-            //Console.WriteLine();
+                AsyncAntColony syncAntColony = new AsyncAntColony(constansts, distanseMap);
+                for (int j = 0; j < innerIterations; j++)
+                    await syncAntColony.IterationAsync();
+
+                stopwatch.Stop();
+                totalTime += stopwatch.ElapsedMilliseconds;
+            }
+            Console.WriteLine(totalTime / outerIterations);
         }
-
-        public static void ParallelSyncAlg(Constants constants, double[,] distanseMap)
-        {
-            ParallelAntColony syncAntColony = new ParallelAntColony(constants, distanseMap);
-
-            for (int i = 0; i < 100; i++)
-                syncAntColony.Iteration();
-
-            //Console.WriteLine($"паралельний: {syncAntColony.Best.Result}");
-            //foreach (var item in syncAntColony.Best.Sequence)
-            //{
-            //    Console.Write($"{item} -> ");
-            //}
-            //Console.WriteLine();
-        }
-
-        public static Stopwatch MeasureTime(Action method)
-        {
-            var stopwatch = new Stopwatch();
-            
-            stopwatch.Start();
-            method();
-            stopwatch.Stop();
-
-            return stopwatch;
-        }
-    }
-    
-    class TestResult
-    {
-        public double Alpha { get; set; }
-        public double Beta { get; set; }
-
-        public int M { get; set; } 
-
-        public double Q { get; set; }
-        public double P { get; set; } 
-
-        public double Result { get; set; }
-
     }
 }
